@@ -1,52 +1,56 @@
-import consola from 'consola';
-import {defineAntDbCommand} from './index';
-import {resolve} from 'pathe';
-import {getAbsoluteFixturesDirs} from '@antify/database';
-import {join} from 'pathe';
 import fs from 'fs';
+import consola from 'consola';
+import {join, resolve} from 'pathe';
+import {defineDbCommand} from './index';
 import {loadDatabaseConfig} from '../utils/load-database-config';
 
-export default defineAntDbCommand({
-    meta: {
-        name: 'make-fixture',
-        usage: 'db make-fixture [databaseName] [fixtureName]',
-        description: 'Generates a fixture',
-    },
-    invoke(args) {
-        const databaseName = args._[0]?.trim();
-        const fixtureName = args._[1]?.trim();
+export default defineDbCommand({
+  meta: {
+    name: 'make-fixture',
+    usage: 'db make-fixture [databaseName] [fixtureName]',
+    description: 'Generates a fixture',
+  },
+  invoke(args) {
+    const databaseName = args._[0]?.trim();
+    const fixtureName = args._[1]?.trim();
+    const absolutePath = resolve(args.cwd || '.');
 
-        if (!databaseName) {
-            return consola.error(`Missing required argument "databaseName"`);
-        }
+    if (!databaseName) {
+      return consola.error(`Missing required argument "databaseName"`);
+    }
 
-        if (!fixtureName) {
-            return consola.error(`Missing required argument "fixtureName"`);
-        }
+    if (!fixtureName) {
+      return consola.error(`Missing required argument "fixtureName"`);
+    }
 
-        const databaseConfig = loadDatabaseConfig(
-            databaseName,
-            resolve(args.cwd || '.')
-        );
+    const databaseConfig = loadDatabaseConfig(
+      databaseName,
+      resolve(args.cwd || '.')
+    );
 
-        if (!databaseConfig) {
-            return;
-        }
+    if (!databaseConfig) {
+      return;
+    }
 
-        const absoluteOutDir = getAbsoluteFixturesDirs(
-            databaseConfig,
-            resolve(args.cwd || '.')
-        );
+    let relativeOutDir = `fixtures/${databaseConfig.name}`;
 
-        if (!fs.existsSync(absoluteOutDir)) {
-            fs.mkdirSync(absoluteOutDir, {recursive: true});
-        }
+    if (databaseConfig.fixturesDir instanceof String) {
+      relativeOutDir = databaseConfig.fixturesDir;
+    } else if (Array.isArray(databaseConfig.fixturesDir) && databaseConfig.fixturesDir.length > 0) {
+      relativeOutDir = databaseConfig.fixturesDir[0];
+    }
 
-        const fileName = `${fixtureName}.ts`;
+    const absoluteOutDir = join(absolutePath, relativeOutDir);
 
-        fs.writeFileSync(
-            join(absoluteOutDir, fileName),
-            `import { defineFixture } from "@antify/database";
+    if (!fs.existsSync(absoluteOutDir)) {
+      fs.mkdirSync(absoluteOutDir, {recursive: true});
+    }
+
+    const fileName = `${fixtureName}.ts`;
+
+    fs.writeFileSync(
+      join(absoluteOutDir, fileName),
+      `import { defineFixture } from "@antify/database";
 
 export default defineFixture({
   async load(client) {
@@ -57,8 +61,8 @@ export default defineFixture({
     return [];
   }
 });`
-        );
+    );
 
-        consola.info(`Created: ${databaseConfig.fixturesDir}/${fileName}`);
-    },
+    consola.info(`Created: ${join(relativeOutDir, fileName)}`);
+  },
 });
