@@ -1,7 +1,7 @@
 import { cyan, magenta } from 'colorette'
-import type { AntDbCommandMeta } from '../commands'
+import type { DbCommandMeta } from '../commands'
 
-export function showHelp (meta?: Partial<AntDbCommandMeta>) {
+export function showHelp (meta?: Partial<DbCommandMeta>) {
   const sections: string[] = []
 
   if (meta) {

@@ -1,4 +1,4 @@
-# Ant Database
+# Database CLI
 
 It does:
 - [x] Merges multiple schemas to one
@@ -42,4 +42,4 @@ Its recommended to keep the date at start of the name.
 ## Development
 
 - Run `pnpm build` to generate type stubs.
-- Run `node bin/ant-db.mjs` to call commands.
+- Run `node bin/db.mjs` to call commands.

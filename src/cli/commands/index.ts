@@ -15,7 +15,7 @@ export const commands = {
 
 export type Command = keyof typeof commands;
 
-export interface AntDbCommandMeta {
+export interface DbCommandMeta {
   name: string;
   usage: string;
   description: string;
@@ -24,11 +24,11 @@ export interface AntDbCommandMeta {
 
 export type CLIInvokeResult = void | 'error' | 'wait';
 
-export interface AntDbCommand {
+export interface DbCommand {
   invoke(args: Argv): Promise<CLIInvokeResult> | CLIInvokeResult;
-  meta: AntDbCommandMeta;
+  meta: DbCommandMeta;
 }
 
-export function defineAntDbCommand(command: AntDbCommand): AntDbCommand {
+export function defineDbCommand(command: DbCommand): DbCommand {
   return command;
 }

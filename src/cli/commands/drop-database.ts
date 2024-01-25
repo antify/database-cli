@@ -1,5 +1,5 @@
 import consola from 'consola';
-import { defineAntDbCommand } from './index';
+import { defineDbCommand } from './index';
 import { resolve } from 'pathe';
 import {
   LoadFixtureExecutionResult,
@@ -18,7 +18,7 @@ import { dropDatabaseMulti } from '@antify/database';
 import { MultiConnectionDropDatabaseCallbacks } from '@antify/database';
 import { DropDatabaseResult } from '@antify/database';
 
-export default defineAntDbCommand({
+export default defineDbCommand({
   meta: {
     name: 'drop-database',
     usage: 'db drop-database [databaseName] [--tenant]',

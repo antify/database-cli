@@ -1,4 +1,4 @@
-import { defineAntDbCommand } from './index';
+import { defineDbCommand } from './index';
 import { resolve } from 'pathe';
 import { splitByCase } from 'scule';
 import { bgRed, bgYellow, bold } from 'colorette';
@@ -14,7 +14,7 @@ import {
 } from '@antify/database';
 import * as dotenv from 'dotenv';
 
-export default defineAntDbCommand({
+export default defineDbCommand({
   meta: {
     name: 'status',
     usage: 'db status [databaseName] [--tenant]',

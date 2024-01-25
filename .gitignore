@@ -1,5 +1,5 @@
-migrations-core
-migrations-tenant
+migrations
+fixtures
 
 # Dependencies
 node_modules

@@ -1,8 +1,8 @@
 import { cyan } from 'colorette';
 import { showHelp } from '../utils/help';
-import { commands, defineAntDbCommand } from './index';
+import { commands, defineDbCommand } from './index';
 
-export default defineAntDbCommand({
+export default defineDbCommand({
   meta: {
     name: 'help',
     usage: 'db help',

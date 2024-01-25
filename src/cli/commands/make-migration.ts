@@ -1,15 +1,15 @@
 import consola from 'consola';
-import { defineAntDbCommand } from './index';
-import { resolve } from 'pathe';
-import { join } from 'pathe';
+import {defineDbCommand} from './index';
+import {resolve} from 'pathe';
+import {join} from 'pathe';
 import fs from 'fs';
-import { loadDatabaseConfig } from '../utils/load-database-config';
+import {loadDatabaseConfig} from '../utils/load-database-config';
 
 const convertTwoDigits = (number: number): string => {
   return number < 10 ? `0${number}` : `${number}`;
 };
 
-export default defineAntDbCommand({
+export default defineDbCommand({
   meta: {
     name: 'make-migration',
     usage: 'db make-migration [databaseName] [migrationName]',
@@ -36,13 +36,14 @@ export default defineAntDbCommand({
       return;
     }
 
+    const relativeOutDir = databaseConfig.migrationDir;
     const absoluteOutDir = join(
       resolve(args.cwd || '.'),
-      databaseConfig.migrationDir
+      relativeOutDir
     );
 
     if (!fs.existsSync(absoluteOutDir)) {
-      fs.mkdirSync(absoluteOutDir, { recursive: true });
+      fs.mkdirSync(absoluteOutDir, {recursive: true});
     }
 
     const now = new Date();
@@ -71,6 +72,6 @@ export default defineMigration({
 });`
     );
 
-    consola.info(`Created: ${fileName}`);
+    consola.info(`Created: ${join(relativeOutDir, fileName)}`);
   },
 });

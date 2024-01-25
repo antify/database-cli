@@ -3,7 +3,7 @@ import { red } from 'colorette';
 import type { ConsolaReporter } from 'consola';
 import consola from 'consola';
 import { checkEngines } from './cli/utils/engines';
-import type { Command, AntDbCommand } from './cli/commands';
+import type { Command, DbCommand } from './cli/commands';
 import { commands } from './cli/commands';
 import { showHelp } from './cli/utils/help';
 
@@ -29,7 +29,7 @@ async function _main() {
   }, 1000);
 
   // @ts-ignore
-  const cmd = (await commands[command as Command]()) as AntDbCommand;
+  const cmd = (await commands[command as Command]()) as DbCommand;
 
   if (args.h || args.help) {
     showHelp(cmd.meta);

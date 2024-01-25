@@ -1,5 +1,5 @@
 import consola from 'consola';
-import { defineAntDbCommand } from './index';
+import { defineDbCommand } from './index';
 import { resolve } from 'pathe';
 import {
   MigrationExecutionResult,
@@ -18,7 +18,7 @@ import { bold } from 'colorette';
 import { validateDatabaseName, validateHasTenantId } from '../utils/validate';
 import * as dotenv from 'dotenv';
 
-export default defineAntDbCommand({
+export default defineDbCommand({
   meta: {
     name: 'migrate',
     usage: 'db migrate [databaseName] [--migration] [--tenant] [--down]',

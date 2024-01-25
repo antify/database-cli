@@ -1,5 +1,5 @@
 import mri from 'mri';
-import type { Command, AntDbCommand } from './cli/commands';
+import type { Command, DbCommand } from './cli/commands';
 import { commands } from './cli/commands';
 
 export async function runCommand(
@@ -8,7 +8,7 @@ export async function runCommand(
 ) {
   const args = mri(argv);
   args.clear = false; // used by dev
-  const cmd = (await commands[command as Command]()) as AntDbCommand;
+  const cmd = (await commands[command as Command]()) as DbCommand;
   if (!cmd) {
     throw new Error(`Invalid command ${command}`);
   }

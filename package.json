@@ -8,10 +8,10 @@
   "type": "module",
   "exports": {
     ".": "./dist/index.mjs",
-    "./cli": "./bin/ant-db.mjs"
+    "./cli": "./bin/db.mjs"
   },
   "bin": {
-    "ant-db": "bin/db.mjs"
+    "db": "bin/db.mjs"
   },
   "types": "./dist/index.d.ts",
   "files": [
@@ -28,6 +28,7 @@
   "devDependencies": {
     "@nuxt/eslint-config": "latest",
     "@types/mri": "^1.1.1",
+    "@types/node": "^20.11.6",
     "c8": "latest",
     "clear": "^0.1.0",
     "colorette": "^2.0.19",
@@ -36,13 +37,16 @@
     "jiti": "^1.16.1",
     "mri": "^1.2.0",
     "pathe": "^1.0.0",
+    "semver": "^7.5.4",
     "standard-version": "latest",
     "typescript": "latest",
     "unbuild": "latest",
     "vitest": "latest"
   },
   "dependencies": {
-    "@antify/database": "file:../database"
+    "@antify/database": "file:../database",
+    "dotenv": "^16.4.1",
+    "scule": "^1.2.0"
   },
   "packageManager": "pnpm@7.0.0",
   "repository": {
