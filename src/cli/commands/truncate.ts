@@ -9,8 +9,7 @@ import {
   Migrator,
   Client,
   DatabaseConfiguration,
-  truncateCollections,
-  CollectionDoesNotExistsError
+  truncateCollections
 } from '@antify/database';
 import { loadDatabaseConfig } from '../utils/load-database-config';
 import { bold } from 'colorette';
@@ -54,18 +53,10 @@ export default defineDbCommand({
     }
 
     const truncate = async (client: Client) => {
-      try {
-        if (collections) {
-          await truncateCollections(client.getConnection(), collections);
-        } else {
-          await truncateAllCollections(client.getConnection());
-        }
-      } catch (e) {
-        if (e instanceof CollectionDoesNotExistsError) {
-          return consola.error(e.message);
-        }
-
-        throw e;
+      if (collections) {
+        await truncateCollections(client.getConnection(), collections);
+      } else {
+        await truncateAllCollections(client.getConnection());
       }
 
       const _collections = collections ? collections.join('|') : ['all collections'];
