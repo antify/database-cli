@@ -10,6 +10,7 @@ export const commands = {
   'make-fixture': () => import('./make-fixture').then(_rDefault),
   'make-migration': () => import('./make-migration').then(_rDefault),
   'drop-database': () => import('./drop-database').then(_rDefault),
+  'truncate': () => import('./truncate').then(_rDefault),
   usage: () => import('./usage').then(_rDefault),
 };
 

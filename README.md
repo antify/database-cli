@@ -17,6 +17,7 @@ It does:
 - [ ] Add promps for load-migration and -fixtures to give the dev an abillity to exit before 
 any code get exec.
 - [ ] On load fixtures or migrations without database name, load everything
+- [ ] Write tests. May with cypress?
 
 TODO:
 - [x] Rename nuxt namings
