@@ -1,16 +1,13 @@
-import { defineDbCommand } from './index';
-import { resolve } from 'pathe';
-import { splitByCase } from 'scule';
-import { bgRed, bgYellow, bold } from 'colorette';
-import { loadDatabaseConfig } from '../utils/load-database-config';
-import { validateDatabaseName, validateHasTenantId } from '../utils/validate';
+import {defineDbCommand} from './index';
+import {resolve} from 'pathe';
+import {splitByCase} from 'scule';
+import {bgRed, bgYellow} from 'colorette';
+import {validateDatabaseName, validateHasTenantId} from '../utils/validate';
 import {
   MultiConnectionClient,
   SingleConnectionClient,
-  Client,
-  SingleConnectionDatabaseConfiguration,
-  MultiConnectionDatabaseConfiguration,
   makeMigrationState,
+  getDatabaseClient
 } from '@antify/database';
 import * as dotenv from 'dotenv';
 
@@ -35,33 +32,17 @@ export default defineDbCommand({
     }
 
     const projectRootDir = resolve(args.cwd || '.');
-    const databaseConfig = loadDatabaseConfig(databaseName, projectRootDir);
+    const client = await getDatabaseClient(databaseName, projectRootDir);
 
-    if (!databaseConfig) {
-      return;
-    }
-
-    let client: SingleConnectionClient | MultiConnectionClient;
-
-    if (databaseConfig.isSingleConnection === true) {
-      client = await SingleConnectionClient.getInstance(
-        databaseConfig
-      ).connect();
+    if (client instanceof SingleConnectionClient) {
+      await client.connect();
     } else {
-      const tenants = await databaseConfig.fetchTenants();
+      const tenants = await client.getConfiguration().fetchTenants();
 
       if (tenantId === null) {
-        client = MultiConnectionClient.getInstance(databaseConfig);
-
         for (const tenant of tenants) {
           await client.connect(tenant.id);
-          await printState(
-            client,
-            databaseConfig,
-            projectRootDir,
-            databaseName,
-            tenant.id
-          );
+          await printState(client, projectRootDir, databaseName, tenant.id);
 
           console.log('\n');
         }
@@ -73,41 +54,26 @@ export default defineDbCommand({
         return;
       }
 
-      client = await MultiConnectionClient.getInstance(databaseConfig).connect(
-        tenantId
-      );
+      await client.connect(tenantId);
     }
 
-    await printState(
-      client,
-      databaseConfig,
-      projectRootDir,
-      databaseName,
-      tenantId
-    );
+    await printState(client, projectRootDir, databaseName, tenantId);
   },
 });
 
 const printState = async (
-  client: Client,
-  databaseConfig:
-    | SingleConnectionDatabaseConfiguration
-    | MultiConnectionDatabaseConfiguration,
+  client: SingleConnectionClient | MultiConnectionClient,
   projectRootDir: string,
   databaseName: string,
   tenantId: string | null
 ) => {
-  const migrationState = await makeMigrationState(
-    client,
-    projectRootDir,
-    databaseConfig
-  );
+  const migrationState = await makeMigrationState(client, projectRootDir);
 
   let infoObj: Object = {
-    ConnectionType: databaseConfig.isSingleConnection
+    ConnectionType: client.getConfiguration().isSingleConnection
       ? 'SingleConnection'
       : 'MultiConnection',
-    MigrationsDirectory: databaseConfig.migrationDir,
+    MigrationsDirectory: client.getConfiguration().migrationDir,
     PreviousVersion: migrationState.prevVersion || '-',
     CurrentVersion: migrationState.currentVersion || '-',
     NextVersion: migrationState.nextVersion || '-',
@@ -124,11 +90,11 @@ const printState = async (
         : 0,
   };
 
-  if (!databaseConfig.isSingleConnection && tenantId) {
-    infoObj = { TenantId: tenantId, ...infoObj };
+  if (client instanceof MultiConnectionClient && tenantId) {
+    infoObj = {TenantId: tenantId, ...infoObj};
   }
 
-  infoObj = { Name: databaseName, ...infoObj };
+  infoObj = {Name: databaseName, ...infoObj};
 
   let maxLength = 0;
   let infoStr = '';

@@ -1,22 +1,18 @@
 import consola from 'consola';
-import { defineDbCommand } from './index';
-import { resolve } from 'pathe';
+import {defineDbCommand} from './index';
+import {resolve} from 'pathe';
 import {
-  LoadFixtureExecutionResult,
   SingleConnectionClient,
-  MultiConnectionLoadFixtureCallbacks,
   MultiConnectionClient,
-  loadFixturesMulticonnection,
-  Client,
+  getDatabaseClient,
+  dropDatabase,
+  dropDatabaseMulti,
+  MultiConnectionDropDatabaseCallbacks,
+  DropDatabaseResult
 } from '@antify/database';
-import { loadDatabaseConfig } from '../utils/load-database-config';
-import { bold } from 'colorette';
-import { validateDatabaseName, validateHasTenantId } from '../utils/validate';
+import {bold} from 'colorette';
+import {validateDatabaseName, validateHasTenantId} from '../utils/validate';
 import * as dotenv from 'dotenv';
-import { dropDatabase } from '@antify/database';
-import { dropDatabaseMulti } from '@antify/database';
-import { MultiConnectionDropDatabaseCallbacks } from '@antify/database';
-import { DropDatabaseResult } from '@antify/database';
 
 export default defineDbCommand({
   meta: {
@@ -39,16 +35,12 @@ export default defineDbCommand({
     }
 
     const projectRootDir = resolve(args.cwd || '.');
-    const databaseConfig = loadDatabaseConfig(databaseName, projectRootDir);
-
-    if (!databaseConfig) {
-      return;
-    }
+    const client = await getDatabaseClient(databaseName, projectRootDir);
 
     if (
-      databaseConfig.isSingleConnection === false &&
+      client instanceof MultiConnectionClient &&
       tenantId &&
-      !validateHasTenantId(await databaseConfig.fetchTenants(), tenantId)
+      !validateHasTenantId(await client.getConfiguration().fetchTenants(), tenantId)
     ) {
       return;
     }
@@ -56,36 +48,25 @@ export default defineDbCommand({
     /**
      * User want to load fixtures for only a specific tenant
      */
-    if (databaseConfig.isSingleConnection === false && tenantId) {
-      const client = await MultiConnectionClient.getInstance(
-        databaseConfig
-      ).connect(tenantId);
+    if (client instanceof MultiConnectionClient && tenantId) {
+      await client.connect(tenantId);
 
-      return await dropSingleDatabase(
-        client,
-        databaseName,
-        tenantId
-      );
+      return await dropSingleDatabase(client, databaseName, tenantId);
     }
 
     /**
      * User want to load fixtures for a single connection
      */
-    if (databaseConfig.isSingleConnection === true) {
-      const client = await SingleConnectionClient.getInstance(
-        databaseConfig
-      ).connect();
+    if (client instanceof SingleConnectionClient) {
+      await client.connect();
 
-      return await dropSingleDatabase(
-        client,
-        databaseName
-      )
+      return await dropSingleDatabase(client, databaseName);
     }
 
     /**
      * User want to load fixtures for a multi connection
      */
-    if (databaseConfig.isSingleConnection === false) {
+    if (client instanceof MultiConnectionClient) {
       const callbacks: MultiConnectionDropDatabaseCallbacks = {
         beforeDropDatabase: (tenantId: string, tenantName: string) => {
           consola.info(`Drop database for tenant ${tenantName}` + (tenantId ? ` ${bold(tenantId)}` : ''));
@@ -104,7 +85,7 @@ export default defineDbCommand({
         }
       };
 
-      return await dropDatabaseMulti(databaseConfig, callbacks);
+      return await dropDatabaseMulti(client, callbacks);
     }
 
     throw new Error('Unhandled combination of parameters');
@@ -112,7 +93,7 @@ export default defineDbCommand({
 });
 
 const dropSingleDatabase = async (
-  client: Client,
+  client: SingleConnectionClient | MultiConnectionClient,
   databaseName: string,
   tenantId?: string
 ): Promise<void> => {

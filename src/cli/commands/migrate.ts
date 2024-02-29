@@ -1,6 +1,8 @@
+import {resolve} from 'pathe';
 import consola from 'consola';
-import { defineDbCommand } from './index';
-import { resolve } from 'pathe';
+import {bold} from 'colorette';
+import * as dotenv from 'dotenv';
+import {defineDbCommand} from './index';
 import {
   MigrationExecutionResult,
   SingleConnectionClient,
@@ -12,11 +14,9 @@ import {
   migrateTenantsUpToEnd,
   MultiConnectionClient,
   MigrationCallbacks,
+  getDatabaseClient
 } from '@antify/database';
-import { loadDatabaseConfig } from '../utils/load-database-config';
-import { bold } from 'colorette';
-import { validateDatabaseName, validateHasTenantId } from '../utils/validate';
-import * as dotenv from 'dotenv';
+import {validateDatabaseName, validateHasTenantId} from '../utils/validate';
 
 export default defineDbCommand({
   meta: {
@@ -45,11 +45,8 @@ export default defineDbCommand({
     }
 
     const projectRootDir = resolve(args.cwd || '.');
-    const databaseConfig = loadDatabaseConfig(databaseName, projectRootDir);
-
-    if (!databaseConfig) {
-      return;
-    }
+    const client = await getDatabaseClient(databaseName, projectRootDir);
+    // TODO:: only use client.getConfiguration() instead of separate loaded config
 
     if (migrationDirection === 'down' && !migrationName) {
       return consola.error(
@@ -57,16 +54,16 @@ export default defineDbCommand({
       );
     }
 
-    if (databaseConfig.isSingleConnection === true && tenantId) {
+    if (client instanceof SingleConnectionClient && tenantId) {
       return consola.error(
         `Can not migrate a single connection to a specific tenant`
       );
     }
 
     if (
-      databaseConfig.isSingleConnection === false &&
+      client instanceof MultiConnectionClient &&
       tenantId &&
-      !validateHasTenantId(await databaseConfig.fetchTenants(), tenantId)
+      !validateHasTenantId(await client.getConfiguration().fetchTenants(), tenantId)
     ) {
       return;
     }
@@ -105,13 +102,11 @@ export default defineDbCommand({
     /**
      * User want to migrate only a specific tenant
      */
-    if (databaseConfig.isSingleConnection === false && tenantId) {
-      const client = await MultiConnectionClient.getInstance(
-        databaseConfig
-      ).connect(tenantId);
+    if (client instanceof MultiConnectionClient && tenantId) {
+      await client.connect(tenantId);
 
       return await migrateOneDatabase(
-        new Migrator(client, databaseConfig, projectRootDir),
+        new Migrator(client, projectRootDir),
         migrationDirection,
         migrationName,
         callbacks
@@ -121,13 +116,11 @@ export default defineDbCommand({
     /**
      * User want to migrate a single connection
      */
-    if (databaseConfig.isSingleConnection === true) {
-      const client = await SingleConnectionClient.getInstance(
-        databaseConfig
-      ).connect();
+    if (client instanceof SingleConnectionClient) {
+      await client.connect();
 
       return await migrateOneDatabase(
-        new Migrator(client, databaseConfig, projectRootDir),
+        new Migrator(client, projectRootDir),
         migrationDirection,
         migrationName,
         callbacks
@@ -137,18 +130,18 @@ export default defineDbCommand({
     /**
      * User want to migrate a multi connection
      */
-    if (databaseConfig.isSingleConnection === false) {
+    if (client instanceof MultiConnectionClient) {
       if (migrationDirection === 'up') {
         if (migrationName) {
           return await migrateTenantsUpTo(
             migrationName,
-            databaseConfig,
+            client.getConfiguration(),
             projectRootDir,
             callbacks
           );
         } else {
           return await migrateTenantsUpToEnd(
-            databaseConfig,
+            client.getConfiguration(),
             projectRootDir,
             callbacks
           );

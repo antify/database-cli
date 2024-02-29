@@ -1,25 +1,19 @@
 import consola from 'consola';
-import { defineDbCommand } from './index';
-import { resolve } from 'pathe';
+import {defineDbCommand} from './index';
+import {resolve} from 'pathe';
 import {
   SingleConnectionClient,
   MultiConnectionClient,
   truncateAllCollections,
-  migrateUpToEnd,
-  Migrator,
-  Client,
-  DatabaseConfiguration,
-  truncateCollections
+  truncateCollections, getDatabaseClient
 } from '@antify/database';
-import { loadDatabaseConfig } from '../utils/load-database-config';
-import { bold } from 'colorette';
-import { validateDatabaseName, validateHasTenantId } from '../utils/validate';
+import {validateDatabaseName, validateHasTenantId} from '../utils/validate';
 import * as dotenv from 'dotenv';
 
 export default defineDbCommand({
   meta: {
-    name: 'load-fixtures',
-    usage: 'db load-fixtures [databaseName] [--tenant] [--collections]',
+    name: 'truncate',
+    usage: 'db truncate [databaseName] [--tenant] [--collections]',
     description: 'Truncate one or multiple databases. Call multiple collections comma separated (without spaces!).',
   },
   async invoke(args) {
@@ -38,21 +32,17 @@ export default defineDbCommand({
     }
 
     const projectRootDir = resolve(args.cwd || '.');
-    const databaseConfig = loadDatabaseConfig(databaseName, projectRootDir);
-
-    if (!databaseConfig) {
-      return;
-    }
+    const client = await getDatabaseClient(databaseName, projectRootDir);
 
     if (
-      databaseConfig.isSingleConnection === false &&
+      client instanceof MultiConnectionClient &&
       tenantId &&
-      !validateHasTenantId(await databaseConfig.fetchTenants(), tenantId)
+      !validateHasTenantId(await client.getConfiguration().fetchTenants(), tenantId)
     ) {
       return;
     }
 
-    const truncate = async (client: Client) => {
+    const truncate = async (client: SingleConnectionClient | MultiConnectionClient) => {
       if (collections) {
         await truncateCollections(client.getConnection(), collections);
       } else {
@@ -67,10 +57,8 @@ export default defineDbCommand({
     /**
      * User want to truncate only a specific tenant
      */
-    if (databaseConfig.isSingleConnection === false && tenantId) {
-      const client = await MultiConnectionClient.getInstance(
-        databaseConfig
-      ).connect(tenantId);
+    if (client instanceof MultiConnectionClient && tenantId) {
+      await client.connect(tenantId);
 
       return await truncate(client);
     }
@@ -78,10 +66,8 @@ export default defineDbCommand({
     /**
      * User want to truncate a single connection
      */
-    if (databaseConfig.isSingleConnection === true) {
-      const client = await SingleConnectionClient.getInstance(
-        databaseConfig
-      ).connect();
+    if (client instanceof SingleConnectionClient) {
+      await client.connect();
 
       return await truncate(client);
     }
@@ -89,14 +75,11 @@ export default defineDbCommand({
     /**
      * User want to truncate a multi connection
      */
-    if (databaseConfig.isSingleConnection === false) {
-      const tenants = await databaseConfig.fetchTenants();
+    if (client instanceof MultiConnectionClient) {
+      const tenants = await client.getConfiguration().fetchTenants();
 
       for (const tenant of tenants) {
-        const client = await MultiConnectionClient.getInstance(
-          databaseConfig
-        ).connect(tenant.id);
-
+        await client.connect(tenant.id);
         await truncate(client);
       }
 
@@ -106,34 +89,3 @@ export default defineDbCommand({
     throw new Error('Unhandled combination of parameters');
   },
 });
-
-const resetSingleDatabase = async (
-  client: Client,
-  databaseConfig: DatabaseConfiguration,
-  projectRootDir: string,
-  databaseName: string,
-  tenantId: string | null
-): Promise<boolean> => {
-  consola.info(
-    `Truncate database ${databaseName}` +
-    (tenantId ? ` ${bold(tenantId)}` : '')
-  );
-
-  await truncateAllCollections(client.getConnection());
-
-  consola.success(`Database truncated`);
-  consola.info(`Load migrations`);
-
-  const results = await migrateUpToEnd(
-    new Migrator(client, databaseConfig, projectRootDir)
-  );
-  const errorResult = results.find((result) => result.error);
-
-  if (errorResult) {
-    consola.error(`Error while loading migrations: ${errorResult.error}`);
-    return false;
-  }
-
-  consola.success(`Migrations loaded\n`);
-  return true;
-};

@@ -30,12 +30,29 @@ D <-- Not executed
 
 ## Usage
 
-TODO::
+Install the package with pnpm:
 
-## Configuration
+```bash
+pnpm i -D @antify/database-cli
+```
+
+Call the cli where the database.config.ts is located with pnpm:
+
+```bash
+pnpm exec db
+```
+
+or with npx
+
+```bash
+npx db
+```
+
 ## Commands
 
-### Migration naming
+### TODO:: Describe commands in docs
+
+## Migration naming
 
 The sorting of the migration names is important. New migrations should be added to the end (sorted ASC).
 Its recommended to keep the date at start of the name.
