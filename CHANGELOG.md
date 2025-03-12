@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0](https://github.com/antify/database-cli/compare/v1.0.1...v1.1.0) (2025-03-12)
+
+
+### Features
+
+* bump @antify/database up to 1.3.0 & node to 22.14 ([79c7579](https://github.com/antify/database-cli/commit/79c757964acb0245ecd47f0bedec7fb9fb0e3e2d))
+
 ### [1.0.1](https://github.com/antify/database-cli/compare/v1.0.0...v1.0.1) (2024-03-06)
 
 ## [1.0.0](https://github.com/antify/database-cli/compare/v0.0.3...v1.0.0) (2024-03-06)

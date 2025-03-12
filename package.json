@@ -1,7 +1,7 @@
 {
   "name": "@antify/database-cli",
   "private": false,
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "",
   "license": "MIT",
   "sideEffects": false,
