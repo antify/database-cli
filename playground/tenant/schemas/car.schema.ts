@@ -1,9 +1,7 @@
 import {defineSchema} from '@antify/database';
 import {Schema} from 'mongoose';
 
-export default defineSchema(() => {
-  console.log('Define car schema for tenant');
-
+export const defineCars = defineSchema(() => {
   return {
     name: 'cars',
     schema: new Schema({
