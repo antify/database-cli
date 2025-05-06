@@ -14,7 +14,8 @@ import {
   migrateTenantsUpToEnd,
   MultiConnectionClient,
   MigrationCallbacks,
-  getDatabaseClient
+  getDatabaseClient,
+  loadDatabaseConfiguration
 } from '@antify/database';
 import {validateDatabaseName, validateHasTenantId} from '../utils/validate';
 
@@ -45,7 +46,7 @@ export default defineDbCommand({
     }
 
     const projectRootDir = resolve(args.cwd || '.');
-    const client = await getDatabaseClient(databaseName, projectRootDir);
+    const client = getDatabaseClient(databaseName, loadDatabaseConfiguration(true, projectRootDir));
     // TODO:: only use client.getConfiguration() instead of separate loaded config
 
     if (migrationDirection === 'down' && !migrationName) {

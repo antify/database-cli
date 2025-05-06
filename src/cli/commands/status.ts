@@ -7,7 +7,8 @@ import {
   MultiConnectionClient,
   SingleConnectionClient,
   makeMigrationState,
-  getDatabaseClient
+  getDatabaseClient,
+  loadDatabaseConfiguration,
 } from '@antify/database';
 import * as dotenv from 'dotenv';
 
@@ -32,7 +33,7 @@ export default defineDbCommand({
     }
 
     const projectRootDir = resolve(args.cwd || '.');
-    const client = await getDatabaseClient(databaseName, projectRootDir);
+    const client = getDatabaseClient(databaseName, loadDatabaseConfiguration(true, projectRootDir));
 
     if (client instanceof SingleConnectionClient) {
       await client.connect();

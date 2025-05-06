@@ -33,7 +33,7 @@ D <-- Not executed
 Install the package with pnpm:
 
 ```bash
-pnpm i -D @antify/database-cli
+pnpm i -D @antify/database-cli --shamefully-hoist
 ```
 
 Call the cli where the database.config.ts is located with pnpm:

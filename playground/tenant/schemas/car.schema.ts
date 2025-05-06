@@ -1,20 +1,24 @@
 import {defineSchema} from '@antify/database';
+import {Schema} from 'mongoose';
 
-export default defineSchema((client) => {
+export default defineSchema(() => {
   console.log('Define car schema for tenant');
 
-  client.getSchema('cars').add({
-    model: {
-      type: String,
-      required: true,
-    },
-    manufacturer: {
-      type: String,
-      required: true,
-    },
-    type: {
-      type: String,
-      required: true,
-    },
-  });
+  return {
+    name: 'cars',
+    schema: new Schema({
+      model: {
+        type: String,
+        required: true,
+      },
+      manufacturer: {
+        type: String,
+        required: true,
+      },
+      type: {
+        type: String,
+        required: true,
+      },
+    })
+  }
 });

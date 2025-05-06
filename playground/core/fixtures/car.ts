@@ -1,10 +1,9 @@
 import { defineFixture } from '@antify/database';
+import { defineCars } from '../schemas/car.schema';
 
 export default defineFixture({
   async load(client) {
-    console.log('Load car fixture for core');
-
-    await client.getModel('cars').insertMany([
+    await client.getModel(defineCars).insertMany([
       {
         model: 'model1',
         manufacturer: 'manufacturer1',

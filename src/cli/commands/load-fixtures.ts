@@ -12,6 +12,7 @@ import {
   migrateUpToEnd,
   Migrator,
   getDatabaseClient,
+  loadDatabaseConfiguration,
 } from '@antify/database';
 import {bold} from 'colorette';
 import {validateDatabaseName, validateHasTenantId} from '../utils/validate';
@@ -39,7 +40,7 @@ export default defineDbCommand({
 
     const projectRootDir = resolve(args.cwd || '.');
     // TODO:: may create a custom getDatabaseClient util, which throw consola errors if configuration does not exists?
-    const client = await getDatabaseClient(databaseName, projectRootDir);
+    const client = getDatabaseClient(databaseName, loadDatabaseConfiguration(true, projectRootDir));
 
     if (
       client instanceof MultiConnectionClient &&

@@ -5,7 +5,9 @@ import {
   SingleConnectionClient,
   MultiConnectionClient,
   truncateAllCollections,
-  truncateCollections, getDatabaseClient
+  truncateCollections,
+  getDatabaseClient,
+  loadDatabaseConfiguration,
 } from '@antify/database';
 import {validateDatabaseName, validateHasTenantId} from '../utils/validate';
 import * as dotenv from 'dotenv';
@@ -32,7 +34,7 @@ export default defineDbCommand({
     }
 
     const projectRootDir = resolve(args.cwd || '.');
-    const client = await getDatabaseClient(databaseName, projectRootDir);
+    const client = getDatabaseClient(databaseName, loadDatabaseConfiguration(true, projectRootDir));
 
     if (
       client instanceof MultiConnectionClient &&

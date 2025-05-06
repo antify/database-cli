@@ -8,7 +8,8 @@ import {
   dropDatabase,
   dropDatabaseMulti,
   MultiConnectionDropDatabaseCallbacks,
-  DropDatabaseResult
+  DropDatabaseResult,
+  loadDatabaseConfiguration,
 } from '@antify/database';
 import {bold} from 'colorette';
 import {validateDatabaseName, validateHasTenantId} from '../utils/validate';
@@ -35,7 +36,7 @@ export default defineDbCommand({
     }
 
     const projectRootDir = resolve(args.cwd || '.');
-    const client = await getDatabaseClient(databaseName, projectRootDir);
+    const client = getDatabaseClient(databaseName, loadDatabaseConfiguration(true, projectRootDir));
 
     if (
       client instanceof MultiConnectionClient &&
