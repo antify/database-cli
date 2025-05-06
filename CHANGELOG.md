@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.3.0](https://github.com/antify/database-cli/compare/v1.2.0...v1.3.0) (2025-05-06)
+
+
+### Features
+
+* make databaseName optional for load-fixtures command ([a487e44](https://github.com/antify/database-cli/commit/a487e449836e86093b09c399b7647b1e27e23474))
+
 ## [1.2.0](https://github.com/antify/database-cli/compare/v1.1.0...v1.2.0) (2025-05-06)
 
 
