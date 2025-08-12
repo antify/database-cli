@@ -2,21 +2,22 @@ import consola from 'consola';
 import {defineDbCommand} from './index';
 import {resolve} from 'pathe';
 import {
-  LoadFixtureExecutionResult,
-  SingleConnectionClient,
-  MultiConnectionLoadFixtureCallbacks,
-  MultiConnectionClient,
-  loadFixtures,
-  loadFixturesMulticonnection,
-  truncateAllCollections,
-  migrateUpToEnd,
   Migrator,
+  MultiConnectionClient,
+  SingleConnectionClient,
+  LoadFixtureExecutionResult,
+  MultiConnectionLoadFixtureCallbacks,
+  loadFixtures,
+  migrateUpToEnd,
   getDatabaseClient,
+  truncateAllCollections,
   loadDatabaseConfiguration,
+  loadFixturesMulticonnection,
 } from '@antify/database';
 import {bold} from 'colorette';
 import {validateDatabaseName, validateHasTenantId} from '../utils/validate';
 import * as dotenv from 'dotenv';
+import {loadFixturesFromFilesystem} from "../../../../database/src/fixture/file-handler";
 
 export default defineDbCommand({
   meta: {
@@ -101,6 +102,9 @@ const loadFixturesForConnection = async (
     },
   };
 
+  // Load fixtures from filesystem.
+  const fixtures = loadFixturesFromFilesystem(projectRootDir, client.getConfiguration());
+
   /**
    * User want to load fixtures for only a specific tenant
    */
@@ -118,7 +122,7 @@ const loadFixturesForConnection = async (
       return;
     }
 
-    return await loadFixtures(client, projectRootDir, callbacks);
+    return await loadFixtures(client, fixtures, callbacks);
   }
 
   /**
@@ -138,7 +142,7 @@ const loadFixturesForConnection = async (
       return;
     }
 
-    return await loadFixtures(client, projectRootDir, callbacks);
+    return await loadFixtures(client, fixtures, callbacks);
   }
 
   /**
@@ -161,7 +165,7 @@ const loadFixturesForConnection = async (
       }
     }
 
-    return await loadFixturesMulticonnection(client, projectRootDir, callbacks);
+    return await loadFixturesMulticonnection(client, fixtures, callbacks);
   }
 
   throw new Error('Unhandled combination of parameters');

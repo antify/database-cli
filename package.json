@@ -42,7 +42,7 @@
     "unbuild": "latest"
   },
   "dependencies": {
-    "@antify/database": "^2.0.0",
+    "@antify/database": "^3.0.0",
     "dotenv": "^16.4.1",
     "scule": "^1.2.0"
   },
