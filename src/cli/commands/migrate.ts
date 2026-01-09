@@ -136,13 +136,13 @@ export default defineDbCommand({
         if (migrationName) {
           return await migrateTenantsUpTo(
             migrationName,
-            client.getConfiguration(),
+            client,
             projectRootDir,
             callbacks
           );
         } else {
           return await migrateTenantsUpToEnd(
-            client.getConfiguration(),
+            client,
             projectRootDir,
             callbacks
           );
