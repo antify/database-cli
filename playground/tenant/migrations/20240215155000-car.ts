@@ -1,11 +1,11 @@
 import { defineMigration } from '@antify/database';
 
 export default defineMigration({
-  async up(client) {
+  async up() {
     console.log('Migrate car up for tenant');
   },
 
-  async down(client) {
+  async down() {
     console.log('Migrate car down for tenant');
   },
 });

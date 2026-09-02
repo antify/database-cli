@@ -95,7 +95,7 @@ export default defineDbCommand({
           `Execute migrations for tenant ${bold(tenantId)} (${tenantName})`
         );
       },
-      onTenantMigrationsFinished(migrateTenantResult) {
+      onTenantMigrationsFinished() {
         consola.log('\n');
       },
     };

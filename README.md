@@ -57,6 +57,23 @@ npx db
 The sorting of the migration names is important. New migrations should be added to the end (sorted ASC).
 Its recommended to keep the date at start of the name.
 
+## Migration data access
+
+Generated migrations receive a schema-independent migration context.
+Use its raw collection access and helpers instead of current application models when old document fields need to be transformed.
+
+```typescript
+export default defineMigration({
+  async up(context) {
+    await context.renameField('cars', 'color', 'farbe');
+  },
+
+  async down(context) {
+    await context.renameField('cars', 'farbe', 'color');
+  },
+});
+```
+
 ## Development
 
 - Run `pnpm build` to generate type stubs.

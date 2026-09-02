@@ -62,11 +62,11 @@ export default defineDbCommand({
       `import { defineMigration } from "@antify/database";
 
 export default defineMigration({
-  async up(client) {
+  async up(context) {
 
   },
 
-  async down(client) {
+  async down(context) {
 
   },
 });`

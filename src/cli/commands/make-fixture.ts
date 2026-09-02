@@ -34,7 +34,7 @@ export default defineDbCommand({
 
     let relativeOutDir = `fixtures/${databaseConfig.name}`;
 
-    if (databaseConfig.fixturesDir instanceof String) {
+    if (typeof databaseConfig.fixturesDir === 'string') {
       relativeOutDir = databaseConfig.fixturesDir;
     } else if (Array.isArray(databaseConfig.fixturesDir) && databaseConfig.fixturesDir.length > 0) {
       relativeOutDir = databaseConfig.fixturesDir[0];

@@ -8,7 +8,7 @@ export default defineDbCommand({
     usage: 'db help',
     description: 'Show help',
   },
-  invoke(_args) {
+  invoke() {
     const sections: string[] = [];
 
     sections.push(

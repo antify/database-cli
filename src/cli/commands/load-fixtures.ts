@@ -2,28 +2,26 @@ import consola from 'consola';
 import {defineDbCommand} from './index';
 import {resolve} from 'pathe';
 import {
-  Migrator,
   MultiConnectionClient,
   SingleConnectionClient,
   LoadFixtureExecutionResult,
   MultiConnectionLoadFixtureCallbacks,
   loadFixtures,
-  migrateUpToEnd,
   getDatabaseClient,
   truncateAllCollections,
   loadDatabaseConfiguration,
   loadFixturesMulticonnection,
+  loadFixturesFromFilesystem,
 } from '@antify/database';
 import {bold} from 'colorette';
 import {validateDatabaseName, validateHasTenantId} from '../utils/validate';
 import * as dotenv from 'dotenv';
-import {loadFixturesFromFilesystem} from "../../../../database/src/fixture/file-handler";
 
 export default defineDbCommand({
   meta: {
     name: 'load-fixtures',
     usage: 'db load-fixtures [databaseName] [--tenant]',
-    description: 'Truncate database, load migrations and load fixtures. If no database name is given, all databases ' +
+    description: 'Truncate database and load fixtures. If no database name is given, all databases ' +
       'and all tenants get loaded.',
   },
   async invoke(args) {
@@ -34,7 +32,7 @@ export default defineDbCommand({
 
     if (args['tenantId']) {
       tenantId = `${tenantId}`.trim();
-    }
+    };
 
     if (databaseName && !validateDatabaseName(databaseName)) {
       return;
@@ -114,7 +112,6 @@ const loadFixturesForConnection = async (
     if (
       !(await resetSingleDatabase(
         client,
-        projectRootDir,
         databaseName,
         tenantId
       ))
@@ -134,7 +131,6 @@ const loadFixturesForConnection = async (
     if (
       !(await resetSingleDatabase(
         client,
-        projectRootDir,
         databaseName,
         tenantId
       ))
@@ -159,7 +155,7 @@ const loadFixturesForConnection = async (
       await client.connect(tenant.id);
 
       if (
-        !(await resetSingleDatabase(client, projectRootDir, databaseName, tenant.id))
+        !(await resetSingleDatabase(client, databaseName, tenant.id))
       ) {
         return;
       }
@@ -173,7 +169,6 @@ const loadFixturesForConnection = async (
 
 const resetSingleDatabase = async (
   client: SingleConnectionClient | MultiConnectionClient,
-  projectRootDir: string,
   databaseName: string,
   tenantId: string | null
 ): Promise<boolean> => {
@@ -185,18 +180,6 @@ const resetSingleDatabase = async (
   await truncateAllCollections(client.getConnection());
 
   consola.success(`Database truncated`);
-  consola.info(`Load migrations`);
 
-  const results = await migrateUpToEnd(
-    new Migrator(client, projectRootDir)
-  );
-  const errorResult = results.find((result) => result.error);
-
-  if (errorResult) {
-    consola.error(`Error while loading migrations: ${errorResult.error}`);
-    return false;
-  }
-
-  consola.success(`Migrations loaded\n`);
   return true;
 };

@@ -1,4 +1,8 @@
 module.exports = {
+  'ignorePatterns': [
+    'dist',
+    'docker',
+  ],
   'extends': ['@nuxt/eslint-config'],
   'rules': {
     'no-extra-semi': 0,
