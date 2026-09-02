@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.0.0](https://github.com/antify/database-cli/compare/v1.4.2...v2.0.0) (2026-09-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* Generated migrations target @antify/database 4 and receive MigrationContext instead of Client.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+
+### Features
+
+* support migration context ([669da4e](https://github.com/antify/database-cli/commit/669da4e1896f3e09f45c5af555d109674fae9c17))
+
 ### 1.4.2 (2026-01-09)
 
 ### [1.4.1](https://github.com/antify/database-cli/compare/v1.4.0...v1.4.1) (2026-01-09)
