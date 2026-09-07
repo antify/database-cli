@@ -2,14 +2,14 @@ import {defineDatabaseConfig} from '@antify/database';
 
 export default defineDatabaseConfig({
   core: {
-    databaseUrl: 'mongodb://core:core@localhost:27017/core',
+    databaseUrl: 'mongodb://localhost:27017/core?directConnection=true',
     isSingleConnection: true,
     migrationDir: './playground/core/migrations',
     fixturesDir: './playground/core/fixtures',
     schemasDir: './playground/core/schemas',
   },
   tenant: {
-    databaseUrl: 'mongodb://root:root@127.0.0.1:27017',
+    databaseUrl: 'mongodb://localhost:27017/?directConnection=true',
     isSingleConnection: false,
     migrationDir: './playground/tenant/migrations',
     fixturesDir: './playground/tenant/fixtures',
