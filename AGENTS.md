@@ -63,7 +63,7 @@ The repo's own `database.config.ts` is a playground config pointing at `mongodb:
 - The logic lives in `src/cli/utils/confirm.ts` (pure decision function `decideConfirmation`, covered by `pnpm test`). New destructive commands must call `confirmDestructive` before touching data.
 - The target is decided by `.env` (loaded via `dotenv.config()` from the working directory of the process, NOT from `--cwd`) and `database.config.ts` in the working directory (or `--cwd`). Before every run, read the `databaseUrl` in that config and make sure it is a local or disposable database.
 - Never run these against a foreign or production database. `db status <db>` is read-only and a safe first look.
-- Exit codes: a missing required argument, an unknown tenant, an unknown database config and a declined confirmation exit with 1. (`migrate --down` is not implemented yet and deletes nothing.)
+- Exit codes: a missing required argument, an unknown tenant, an unknown database config and a declined or aborted (Ctrl-C/Ctrl-D) confirmation and errors from the driver or from migrations exit with 1. (`migrate --down` is not implemented yet and deletes nothing.)
 
 ## Structure
 

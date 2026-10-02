@@ -85,6 +85,8 @@ export default defineDbCommand({
         },
         onDropDatabaseFinished: (result: DropDatabaseResult) => {
           if (result.result.error) {
+            process.exitCode = 1;
+
             return consola.error(result.result.error.message);
           }
 
@@ -120,5 +122,6 @@ const dropSingleDatabase = async (
     consola.success(`Database dropped (took ${result.executionTimeInMs} ms)\n`);
   } else {
     consola.error(`Error while dropping database: ${result.error}`);
+    process.exitCode = 1;
   }
 };

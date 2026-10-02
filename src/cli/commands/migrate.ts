@@ -72,6 +72,8 @@ export default defineDbCommand({
     const callbacks: MultiConnectionMigrationCallbacks = {
       onMigrationFinished: (executionResult: MigrationExecutionResult) => {
         if (executionResult.error) {
+          process.exitCode = 1;
+
           return consola.error(executionResult.error.message);
         }
 

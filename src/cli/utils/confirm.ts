@@ -32,20 +32,71 @@ export const decideConfirmation = (input: {
   return /^y(es)?$/i.test(input.answer.trim()) ? 'proceed' : 'declined';
 };
 
+const URL_SCHEME = /^([a-z][a-z0-9+.-]*):\/\//i;
+// host list: hostnames, IPv4/IPv6, ports, commas for replica sets, optional unix socket is not supported
+const URL_HOSTS = /^([a-z0-9._:,[\]%-]+)(?=[/?#]|$)/i;
+
+/**
+ * Splits a connection url into scheme, hosts and the part after the hosts, without ever returning credentials.
+ * Everything between "://" and the LAST "@" is treated as credentials (a password may contain "/", "?", "#", "@").
+ * Returns null if the url can not be split safely.
+ */
+const splitDatabaseUrl = (url: string): {scheme: string; hosts: string; rest: string} | null => {
+  const trimmed = url.trim();
+  const scheme = URL_SCHEME.exec(trimmed);
+
+  if (!scheme) {
+    return null;
+  }
+
+  const afterScheme = trimmed.slice(scheme[0].length);
+  const at = afterScheme.lastIndexOf('@');
+  const afterCredentials = at === -1 ? afterScheme : afterScheme.slice(at + 1);
+  const hosts = URL_HOSTS.exec(afterCredentials);
+
+  if (!hosts) {
+    return null;
+  }
+
+  return {scheme: scheme[1], hosts: hosts[1], rest: afterCredentials.slice(hosts[1].length)};
+};
+
 /**
  * Returns "scheme://host[:port]" of a connection url. Credentials, path and query are dropped,
- * so the result is safe to print.
+ * so the result is safe to print. Unsafe to split urls give "<unparsable url>".
  */
 export const maskDatabaseUrl = (url: string): string => {
-  const match = /^([a-z][a-z0-9+.-]*):\/\/(?:[^/?#]*@)?([^/?#]*)/i.exec(url.trim());
+  const parts = splitDatabaseUrl(url);
 
-  return match ? `${match[1]}://${match[2]}` : '<unparsable url>';
+  return parts ? `${parts.scheme}://${parts.hosts}` : '<unparsable url>';
 };
+
+/**
+ * Returns the database name from the path of a connection url (null if there is none or the url is unparsable).
+ */
+export const getDatabaseNameFromUrl = (url: string): string | null => {
+  const parts = splitDatabaseUrl(url);
+
+  if (!parts) {
+    return null;
+  }
+
+  const match = /^\/([^/?#]*)/.exec(parts.rest);
+
+  return match && match[1] ? match[1] : null;
+};
+
+/**
+ * Name of the database of a tenant. Same rule as `MultiConnectionClient.connect` in @antify/database:
+ * `databasePrefix` (default "tenant_") plus tenant id.
+ */
+export const getTenantDatabaseName = (config: {databasePrefix?: string}, tenantId: string): string =>
+  `${config.databasePrefix || 'tenant_'}${tenantId}`;
 
 type DatabaseConfig = DatabaseConfigurations[string];
 
 /**
- * Describes what a command is going to hit, without credentials.
+ * Describes what a command is going to hit (config key, real database name, host), without credentials.
  */
 export const describeDatabaseTarget = async (
   databaseName: string,
@@ -55,15 +106,17 @@ export const describeDatabaseTarget = async (
   const host = maskDatabaseUrl(config.databaseUrl);
 
   if (config.isSingleConnection) {
-    return `database "${databaseName}" (single connection) on ${host}`;
+    const realName = getDatabaseNameFromUrl(config.databaseUrl);
+
+    return `database "${databaseName}" (single connection, real database name: ${realName ? `"${realName}"` : 'none in url'}) on ${host}`;
   }
 
   if (tenantId) {
-    return `database "${databaseName}", tenant "${tenantId}" only, on ${host}`;
+    return `database "${databaseName}", tenant "${tenantId}" only (real database name: "${getTenantDatabaseName(config, tenantId)}"), on ${host}`;
   }
 
   const tenants = await config.fetchTenants();
-  const names = tenants.map((tenant) => tenant.id).join(', ');
+  const names = tenants.map((tenant) => `${tenant.id} -> "${getTenantDatabaseName(config, tenant.id)}"`).join(', ');
 
   return `database "${databaseName}", ALL tenants (${tenants.length}${names ? ': ' + names : ''}), on ${host}`;
 };
@@ -93,6 +146,11 @@ export const confirmDestructive = async (
 
     try {
       answer = await rl.question('Continue? This cannot be undone. [y/N] ');
+    } catch {
+      // Ctrl-C / Ctrl-D (AbortError): treat as "no"
+      consola.error('Aborted.');
+
+      return false;
     } finally {
       rl.close();
     }

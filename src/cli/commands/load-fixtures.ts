@@ -105,6 +105,8 @@ const loadFixturesForConnection = async (
   const callbacks: MultiConnectionLoadFixtureCallbacks = {
     onLoadFixtureFinished: (executionResult: LoadFixtureExecutionResult) => {
       if (executionResult.error) {
+        process.exitCode = 1;
+
         return consola.error(executionResult.error.message);
       }
 
@@ -221,6 +223,7 @@ const resetSingleDatabase = async (
 
   if (errorResult) {
     consola.error(`Error while loading migrations: ${errorResult.error}`);
+    process.exitCode = 1;
     return false;
   }
 
