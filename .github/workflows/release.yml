@@ -31,5 +31,8 @@ jobs:
       - name: Authenticate with npm registry
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
 
+      - name: Build
+        run: pnpm build
+
       - name: Release new version
         run: pnpm release
