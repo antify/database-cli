@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import jiti from 'jiti';
 
 const load = jiti(import.meta.url, {interopDefault: true});
-const {decideConfirmation, maskDatabaseUrl, getDatabaseNameFromUrl, getTenantDatabaseName} = load('../src/cli/utils/confirm.ts');
+const {decideConfirmation, describeDatabaseTarget, maskDatabaseUrl, getDatabaseNameFromUrl, getTenantDatabaseName} = load('../src/cli/utils/confirm.ts');
 
 test('--yes always proceeds', () => {
   assert.equal(decideConfirmation({yes: true, isTTY: false}), 'proceed');
@@ -64,4 +64,30 @@ test('getDatabaseNameFromUrl returns the real database name without credentials'
 test('getTenantDatabaseName uses the prefix like the core client', () => {
   assert.equal(getTenantDatabaseName({}, 't1'), 'tenant_t1');
   assert.equal(getTenantDatabaseName({databasePrefix: 'review'}, 't1'), 'reviewt1');
+});
+
+test('an "@" after the host (query, fragment, path) is ambiguous: not split, never a wrong host', () => {
+  for (const url of ['mongodb://u:pw@host/db?x=a@b', 'mongodb://u:pw@host/db#frag@x', 'mongodb://u:pw@host:27017/db/with@at']) {
+    assert.equal(maskDatabaseUrl(url), '<unparsable url>', url);
+    assert.equal(getDatabaseNameFromUrl(url), null, url);
+  }
+
+  // without such an "@" the url is split as before
+  assert.equal(maskDatabaseUrl('mongodb://u:pw@host/db?x=ab'), 'mongodb://host');
+  assert.equal(getDatabaseNameFromUrl('mongodb://u:pw@host/db?x=ab'), 'db');
+});
+
+test('ambiguous urls are not split and never show credentials', () => {
+  for (const url of ['mongodb://host/db?x=a@b', 'mongodb://h:1/db/with@at', 'mongodb://u:p@w@h/x/y@z']) {
+    assert.equal(maskDatabaseUrl(url), '<unparsable url>', url);
+    assert.equal(getDatabaseNameFromUrl(url), null, url);
+  }
+});
+
+test('describeDatabaseTarget names the driver default database for a single connection without db in the url', async () => {
+  const out = await describeDatabaseTarget('core', {isSingleConnection: true, databaseUrl: 'mongodb://u:pw@h:1'}, null);
+
+  assert.ok(out.includes('none in url, driver default "test"'));
+  assert.ok(!out.includes('pw'));
+  assert.ok((await describeDatabaseTarget('core', {isSingleConnection: true, databaseUrl: 'mongodb://h:1/x'}, null)).includes('"x"'));
 });

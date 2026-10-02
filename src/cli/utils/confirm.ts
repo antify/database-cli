@@ -34,12 +34,15 @@ export const decideConfirmation = (input: {
 
 const URL_SCHEME = /^([a-z][a-z0-9+.-]*):\/\//i;
 // host list: hostnames, IPv4/IPv6, ports, commas for replica sets, optional unix socket is not supported
+const STRICT_HOSTS = /^[a-z0-9._,[\]%-]+(:\d+)?(,[a-z0-9._[\]%-]+(:\d+)?)*$/i;
 const URL_HOSTS = /^([a-z0-9._:,[\]%-]+)(?=[/?#]|$)/i;
 
 /**
  * Splits a connection url into scheme, hosts and the part after the hosts, without ever returning credentials.
- * Everything between "://" and the LAST "@" is treated as credentials (a password may contain "/", "?", "#", "@").
- * Returns null if the url can not be split safely.
+ * Credentials end at the last "@" before the first "/", "?" or "#" (so a "@" in path, query or fragment is not
+ * mistaken for the credentials end). A password may also contain a raw "/", "?" or "#"; that reading (last "@"
+ * of the whole url) is only used when the part before the first delimiter can not be a host list.
+ * Where both readings are plausible and differ, the url is not split (null), never a part of the credentials.
  */
 const splitDatabaseUrl = (url: string): {scheme: string; hosts: string; rest: string} | null => {
   const trimmed = url.trim();
@@ -50,7 +53,21 @@ const splitDatabaseUrl = (url: string): {scheme: string; hosts: string; rest: st
   }
 
   const afterScheme = trimmed.slice(scheme[0].length);
-  const at = afterScheme.lastIndexOf('@');
+  const prefixEnd = afterScheme.search(/[/?#]/);
+  const prefix = prefixEnd === -1 ? afterScheme : afterScheme.slice(0, prefixEnd);
+  const atPrefix = prefix.lastIndexOf('@');
+  const atLast = afterScheme.lastIndexOf('@');
+  let at = atPrefix;
+
+  if (atPrefix !== atLast) {
+    // readings differ: only trust the whole-url reading if the prefix can not be a host list (e.g. "user:pa" of "user:pa/ss@host")
+    if (atPrefix !== -1 || STRICT_HOSTS.test(prefix)) {
+      return null;
+    }
+
+    at = atLast;
+  }
+
   const afterCredentials = at === -1 ? afterScheme : afterScheme.slice(at + 1);
   const hosts = URL_HOSTS.exec(afterCredentials);
 
@@ -108,7 +125,7 @@ export const describeDatabaseTarget = async (
   if (config.isSingleConnection) {
     const realName = getDatabaseNameFromUrl(config.databaseUrl);
 
-    return `database "${databaseName}" (single connection, real database name: ${realName ? `"${realName}"` : 'none in url'}) on ${host}`;
+    return `database "${databaseName}" (single connection, real database name: ${realName ? `"${realName}"` : `none in url, driver default "test"`}) on ${host}`;
   }
 
   if (tenantId) {
@@ -146,7 +163,11 @@ export const confirmDestructive = async (
 
     try {
       answer = await rl.question('Continue? This cannot be undone. [y/N] ');
-    } catch {
+    } catch (error) {
+      if ((error as {name?: string}).name !== 'AbortError') {
+        throw error;
+      }
+
       // Ctrl-C / Ctrl-D (AbortError): treat as "no"
       consola.error('Aborted.');
 
