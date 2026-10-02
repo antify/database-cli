@@ -21,6 +21,7 @@
     "build": "unbuild",
     "dev": "vitest dev",
     "lint": "eslint .",
+    "test": "node --test test/*.test.mjs",
     "lint:fix": "eslint . --fix",
     "prepack": "unbuild",
     "release": "standard-version && git push --follow-tags && pnpm publish"

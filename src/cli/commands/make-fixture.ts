@@ -1,5 +1,6 @@
 import fs from 'fs';
 import consola from 'consola';
+import {fail} from '../utils/validate';
 import {join, resolve} from 'pathe';
 import {defineDbCommand} from './index';
 import {loadDatabaseConfig} from '../utils/load-database-config';
@@ -16,11 +17,11 @@ export default defineDbCommand({
     const absolutePath = resolve(args.cwd || '.');
 
     if (!databaseName) {
-      return consola.error(`Missing required argument "databaseName"`);
+      return fail(`Missing required argument "databaseName"`);
     }
 
     if (!fixtureName) {
-      return consola.error(`Missing required argument "fixtureName"`);
+      return fail(`Missing required argument "fixtureName"`);
     }
 
     const databaseConfig = loadDatabaseConfig(

@@ -1,4 +1,4 @@
-import consola from 'consola';
+import {fail} from './validate';
 import {
   DatabaseConfigurations,
   MultiConnectionDatabaseConfiguration,
@@ -18,12 +18,12 @@ export const loadDatabaseConfig = (
   try {
     databaseConfig = loadDatabaseConfiguration(false, projectRootDir) || {};
   } catch (e) {
-    consola.error(e.message);
+    fail(e.message);
     return null;
   }
 
   if (databaseConfig[databaseName] === undefined) {
-    consola.error(
+    fail(
       `There exists no configuration for database "${databaseName}"`
     );
     return null;

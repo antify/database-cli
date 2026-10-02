@@ -14,7 +14,7 @@ It does:
 - [ ] Write docs
 - [ ] Improve security (mongodb user per tenant)
 - [ ] Make work with npx. Only works with yarn or pnpm exec
-- [ ] Add promps for load-migration and -fixtures to give the dev an abillity to exit before 
+- [x] Add promps for load-migration and -fixtures to give the dev an abillity to exit before 
 any code get exec.
 - [ ] On load fixtures or migrations without database name, load everything
 - [ ] Write tests. May with cypress?
@@ -58,13 +58,19 @@ Run `db <command> --help` for details. Global option: `--cwd <dir>` sets the pro
 | `db migrate [databaseName] [--migration] [--tenant] [--down]` | Run migrations (`--down` requires `--migration`) |
 | `db make-migration [databaseName] [migrationName]` | Generate a migration |
 | `db make-fixture [databaseName] [fixtureName]` | Generate a fixture |
-| `db load-fixtures [databaseName] [--tenant]` | **Destructive.** Truncate, run migrations, load fixtures. Without a database name: all databases and tenants |
-| `db truncate [databaseName] [--tenant] [--collections a,b]` | **Destructive.** Empty collections (comma separated, no spaces). On a multi-tenant database without `--tenant` it empties ALL tenants |
-| `db drop-database [databaseName] [--tenant]` | **Destructive.** Drop the database (multi-tenant: all tenants) |
+| `db load-fixtures [databaseName] [--tenant] [--yes]` | **Destructive, asks for confirmation.** Truncate, run migrations, load fixtures. Without a database name: all databases and tenants |
+| `db truncate [databaseName] [--tenant] [--collections a,b] [--yes]` | **Destructive, asks for confirmation.** Empty collections (comma separated, no spaces). On a multi-tenant database without `--tenant` it empties ALL tenants |
+| `db drop-database [databaseName] [--tenant] [--yes]` | **Destructive, asks for confirmation.** Drop the database (multi-tenant: all tenants) |
 | `db help` | Show help |
 
-> **Warning:** `load-fixtures`, `truncate` and `drop-database` delete data without asking for confirmation. The target is determined by the `.env` and `database.config.ts` in the working directory. Check the target before every run and never run them against a database you do not own or that holds production data.
-> A missing required argument prints an error but exits with code 0.
+> **Warning:** `load-fixtures`, `truncate` and `drop-database` delete data. The target is determined by the `.env` and `database.config.ts` in the working directory. Check the target before every run and never run them against a database you do not own or that holds production data.
+>
+> Before anything is deleted, these commands print what is affected (database names, host without credentials, tenants; "ALL tenants" for `truncate` without `--tenant`, all configured databases for `load-fixtures` without a database name) and ask `Continue? [y/N]` (default: no).
+> `--yes` (`-y`) skips the question. Without `--yes` in a non-interactive shell (no TTY, e.g. CI) the command refuses to run, changes nothing and exits with code 1.
+>
+> **Upgrading:** scripts that call these commands non-interactively need `--yes` as of this version.
+>
+> A missing required argument, an unknown tenant or a declined confirmation exit with code 1.
 
 ## Migration naming
 

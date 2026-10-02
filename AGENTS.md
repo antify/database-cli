@@ -14,19 +14,20 @@ Guidance for coding agents (and humans) working in this repository.
 
 ## Commands
 
-All commands were run in a fresh worktree on 2026-10-02 (Node 24.19, pnpm 10.10.0).
+All commands were run in a fresh worktree on 2026-10-02 (Node 24.19, pnpm 10.10.0); `pnpm test` added afterwards.
 
 | Command | Purpose | Duration |
 | --- | --- | --- |
 | `CI=true pnpm install --frozen-lockfile` | Install, non-interactive | ~1-4 s |
 | `pnpm build` | Build `dist/` with unbuild (required before running `bin/db.mjs`) | ~4 s |
 | `pnpm lint` | ESLint (flat config `eslint.config.js`), no auto-fix | ~3 s |
+| `pnpm test` | `node --test` for the confirmation logic (`test/*.test.mjs`, via jiti, no build needed) | <1 s |
 | `pnpm lint:fix` | ESLint with `--fix` | ~3 s |
 | `node bin/db.mjs` | Print the list of commands (after `pnpm build`) | <1 s |
 
-Fastest check after a change: `pnpm build` (there are no tests), then `pnpm lint` and compare against the baseline below.
+Fastest check after a change: `pnpm build` and `pnpm test`, then `pnpm lint` and compare against the baseline below.
 
-There is no `test` script. `pnpm dev` runs `vitest dev`, but vitest is not installed, so it does not work.
+`pnpm test` only covers the confirmation helper. `pnpm dev` runs `vitest dev`, but vitest is not installed, so it does not work.
 
 ### Running the CLI locally against a throw-away MongoDB
 
@@ -53,14 +54,16 @@ The repo's own `database.config.ts` is a playground config pointing at `mongodb:
 
 ## Destructive commands
 
-**`drop-database`, `truncate` and `load-fixtures` delete data without any confirmation prompt.**
+**`drop-database`, `truncate` and `load-fixtures` delete data. They print the target (database names, host without credentials, tenants) and ask for confirmation first.**
 
 - `drop-database <db>` drops the database (for multi-tenant databases: all tenants).
-- `truncate <db>` empties all collections (or the ones in `--collections`). **On a multi-tenant database without `--tenant` it empties every tenant.**
+- `truncate <db>` empties all collections (or the ones in `--collections`). **On a multi-tenant database without `--tenant` it empties every tenant** (the prompt says "ALL tenants").
 - `load-fixtures` truncates, runs migrations, then loads fixtures. **Without a database name it hits every configured database and tenant.**
+- Confirmation: interactive `[y/N]` prompt (default no) when stdin is a TTY. `--yes` / `-y` skips it. Without `--yes` and without a TTY (agents, CI) the command changes nothing, prints "refusing to run a destructive command without --yes in a non-interactive shell" and exits 1. Agents: pass `--yes` only against a disposable database, after reading the target in the printed summary. Scripts that call these commands non-interactively need `--yes` as of this version.
+- The logic lives in `src/cli/utils/confirm.ts` (pure decision function `decideConfirmation`, covered by `pnpm test`). New destructive commands must call `confirmDestructive` before touching data.
 - The target is decided by `.env` (loaded via `dotenv.config()` from the working directory of the process, NOT from `--cwd`) and `database.config.ts` in the working directory (or `--cwd`). Before every run, read the `databaseUrl` in that config and make sure it is a local or disposable database.
 - Never run these against a foreign or production database. `db status <db>` is read-only and a safe first look.
-- Exit code: a missing required argument (e.g. `db migrate` without a database name) prints an error but exits with code **0**. Do not rely on the exit code to detect that. Unknown commands and unknown database configs exit with 1.
+- Exit codes: a missing required argument, an unknown tenant, an unknown database config and a declined confirmation exit with 1. (`migrate --down` is not implemented yet and deletes nothing.)
 
 ## Structure
 
@@ -82,12 +85,12 @@ Adding a command: create `src/cli/commands/<name>.ts` following an existing file
 | `db migrate [databaseName] [--migration] [--tenant] [--down]` | Run migrations |
 | `db make-migration [databaseName] [migrationName]` | Generate a migration file `YYYYMMDDHHMMSS-name.ts` (UTC) |
 | `db make-fixture [databaseName] [fixtureName]` | Generate a fixture file |
-| `db load-fixtures [databaseName] [--tenant]` | DESTRUCTIVE: truncate, migrate, load fixtures |
-| `db truncate [databaseName] [--tenant] [--collections a,b]` | DESTRUCTIVE: empty collections |
-| `db drop-database [databaseName] [--tenant]` | DESTRUCTIVE: drop database |
+| `db load-fixtures [databaseName] [--tenant] [--yes]` | DESTRUCTIVE: truncate, migrate, load fixtures |
+| `db truncate [databaseName] [--tenant] [--collections a,b] [--yes]` | DESTRUCTIVE: empty collections |
+| `db drop-database [databaseName] [--tenant] [--yes]` | DESTRUCTIVE: drop database |
 | `db help` | Show help |
 
-Global option: `--cwd <dir>`.
+Global options: `--cwd <dir>`, `--yes`/`-y` (skip the confirmation of destructive commands).
 
 ## How the three repositories fit together
 
@@ -102,11 +105,11 @@ Global option: `--cwd <dir>`.
 - Conventional Commits (`feat:`, `fix:`, `chore:`, `feat!:` for breaking), in English. `standard-version` derives version and CHANGELOG from them.
 - **Merging to `main` publishes a new npm release automatically** (`.github/workflows/release.yml`: version bump, tag, `pnpm publish` via `pnpm release`). This also applies to docs and chore merges. Only merge when a release is intended.
 - Never run `pnpm release` or `pnpm publish` locally.
-- Pull requests run `pr.yml` (install, build; lint is informational for now).
+- Pull requests run `pr.yml` (install, build, test; lint is informational for now).
 
 ## Known state (2026-10-02)
 
-- No tests exist.
+- Tests: only `test/confirm.test.mjs` (confirmation decision and URL masking).
 - `pnpm lint` runs and currently reports 18 errors in 11 files (mostly `no-explicit-any`, `consistent-type-imports`, `no-invalid-void-type`; 7 auto-fixable). Rule: no new lint errors in files you touch. Do not loosen rules to hide errors.
 - `typescript` is pinned to `~6.0.3` because `typescript-eslint` does not support TypeScript 7 yet.
 - `npx tsc --noEmit` fails (also on TS 6): `tsconfig.json` uses `moduleResolution: node10`, which TypeScript deprecates. Not changed here, because it can alter the build. Do not add new type errors.

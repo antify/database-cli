@@ -13,13 +13,14 @@ import {
 } from '@antify/database';
 import {bold} from 'colorette';
 import {validateDatabaseName, validateHasTenantId} from '../utils/validate';
+import {confirmDestructive, describeDatabaseTarget} from '../utils/confirm';
 import * as dotenv from 'dotenv';
 
 export default defineDbCommand({
   meta: {
     name: 'drop-database',
-    usage: 'db drop-database [databaseName] [--tenant]',
-    description: 'Drop one or multiple databases',
+    usage: 'db drop-database [databaseName] [--tenant] [--yes]',
+    description: 'DESTRUCTIVE: Drop one or multiple databases. Asks for confirmation, use --yes (-y) to skip it.',
   },
   async invoke(args) {
     dotenv.config();
@@ -44,6 +45,16 @@ export default defineDbCommand({
       !validateHasTenantId(await client.getConfiguration().fetchTenants(), tenantId)
     ) {
       return;
+    }
+
+    const confirmed = await confirmDestructive(
+      args,
+      'drop-database',
+      [await describeDatabaseTarget(databaseName, client.getConfiguration(), tenantId)]
+    );
+
+    if (!confirmed) {
+      return 'error';
     }
 
     /**

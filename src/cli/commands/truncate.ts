@@ -10,13 +10,15 @@ import {
   loadDatabaseConfiguration,
 } from '@antify/database';
 import {validateDatabaseName, validateHasTenantId} from '../utils/validate';
+import {confirmDestructive, describeDatabaseTarget} from '../utils/confirm';
 import * as dotenv from 'dotenv';
 
 export default defineDbCommand({
   meta: {
     name: 'truncate',
-    usage: 'db truncate [databaseName] [--tenant] [--collections]',
-    description: 'Truncate one or multiple databases. Call multiple collections comma separated (without spaces!).',
+    usage: 'db truncate [databaseName] [--tenant] [--collections] [--yes]',
+    description: 'DESTRUCTIVE: Truncate one or multiple databases. Call multiple collections comma separated (without spaces!). ' +
+      'Without --tenant all tenants of a multi tenant database get truncated. Asks for confirmation, use --yes (-y) to skip it.',
   },
   async invoke(args) {
     dotenv.config();
@@ -42,6 +44,19 @@ export default defineDbCommand({
       !validateHasTenantId(await client.getConfiguration().fetchTenants(), tenantId)
     ) {
       return;
+    }
+
+    const confirmed = await confirmDestructive(
+      args,
+      'truncate',
+      [
+        `${collections ? 'collections ' + collections.join(', ') : 'all collections'} of ` +
+        await describeDatabaseTarget(databaseName, client.getConfiguration(), tenantId),
+      ]
+    );
+
+    if (!confirmed) {
+      return 'error';
     }
 
     const truncate = async (client: SingleConnectionClient | MultiConnectionClient) => {

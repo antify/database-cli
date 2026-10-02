@@ -17,7 +17,7 @@ import {
   getDatabaseClient,
   loadDatabaseConfiguration
 } from '@antify/database';
-import {validateDatabaseName, validateHasTenantId} from '../utils/validate';
+import {fail, validateDatabaseName, validateHasTenantId} from '../utils/validate';
 
 export default defineDbCommand({
   meta: {
@@ -50,13 +50,13 @@ export default defineDbCommand({
     // TODO:: only use client.getConfiguration() instead of separate loaded config
 
     if (migrationDirection === 'down' && !migrationName) {
-      return consola.error(
+      return fail(
         `Missing required property "migration" to execute down migration`
       );
     }
 
     if (client instanceof SingleConnectionClient && tenantId) {
-      return consola.error(
+      return fail(
         `Can not migrate a single connection to a specific tenant`
       );
     }

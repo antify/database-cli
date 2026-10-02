@@ -1,4 +1,5 @@
 import consola from 'consola';
+import {fail} from '../utils/validate';
 import {defineDbCommand} from './index';
 import {resolve} from 'pathe';
 import {join} from 'pathe';
@@ -20,11 +21,11 @@ export default defineDbCommand({
     const migrationName = args._[1]?.trim();
 
     if (!databaseName) {
-      return consola.error(`Missing required argument "databaseName"`);
+      return fail(`Missing required argument "databaseName"`);
     }
 
     if (!migrationName) {
-      return consola.error(`Missing required argument "migrationName"`);
+      return fail(`Missing required argument "migrationName"`);
     }
 
     const databaseConfig = loadDatabaseConfig(

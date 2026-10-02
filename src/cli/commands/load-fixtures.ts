@@ -17,14 +17,15 @@ import {
 } from '@antify/database';
 import {bold} from 'colorette';
 import {validateDatabaseName, validateHasTenantId} from '../utils/validate';
+import {confirmDestructive, describeDatabaseTarget} from '../utils/confirm';
 import * as dotenv from 'dotenv';
 
 export default defineDbCommand({
   meta: {
     name: 'load-fixtures',
-    usage: 'db load-fixtures [databaseName] [--tenant]',
+    usage: 'db load-fixtures [databaseName] [--tenant] [--yes]',
     description: 'Truncate database, load migrations and load fixtures. If no database name is given, all databases ' +
-      'and all tenants get loaded.',
+      'and all tenants get loaded. DESTRUCTIVE: asks for confirmation, use --yes (-y) to skip it.',
   },
   async invoke(args) {
     dotenv.config();
@@ -47,6 +48,22 @@ export default defineDbCommand({
      * User want to load fixtures for all connections and all tenants
      */
     if (!databaseName) {
+      const targets = [];
+
+      for (const name of Object.keys(configuration)) {
+        targets.push(await describeDatabaseTarget(name, configuration[name], null));
+      }
+
+      const confirmed = await confirmDestructive(
+        args,
+        'load-fixtures (truncates, migrates and loads fixtures) for ALL configured databases',
+        targets
+      );
+
+      if (!confirmed) {
+        return 'error';
+      }
+
       for (const databaseName of Object.keys(configuration)) {
         const client = getDatabaseClient(databaseName, configuration);
         await loadFixturesForConnection(client, projectRootDir, databaseName, null);
@@ -63,6 +80,16 @@ export default defineDbCommand({
       !validateHasTenantId(await client.getConfiguration().fetchTenants(), tenantId)
     ) {
       return;
+    }
+
+    const confirmed = await confirmDestructive(
+      args,
+      'load-fixtures (truncates, migrates and loads fixtures)',
+      [await describeDatabaseTarget(databaseName, client.getConfiguration(), tenantId)]
+    );
+
+    if (!confirmed) {
+      return 'error';
     }
 
     await loadFixturesForConnection(client, projectRootDir, databaseName, tenantId);

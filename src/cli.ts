@@ -11,7 +11,8 @@ import { showHelp } from './cli/utils/help';
 async function _main() {
   const _argv = process.argv.slice(2);
   const args = mri(_argv, {
-    boolean: ['no-clear'],
+    boolean: ['no-clear', 'yes'],
+    alias: {y: 'yes'},
   });
   // @ts-ignore
   const command = args._.shift() || 'usage';
@@ -84,7 +85,7 @@ export function main() {
       if (result === 'error') {
         process.exit(1);
       } else if (result !== 'wait') {
-        process.exit(0);
+        process.exit(process.exitCode ?? 0);
       }
     })
     .catch((error) => {

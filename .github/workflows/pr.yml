@@ -27,6 +27,9 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Test
+        run: pnpm test
+
       # Not blocking yet: the lint baseline is still red (see AGENTS.md).
       # Make this step required (remove continue-on-error) once the baseline is green.
       - name: Lint
