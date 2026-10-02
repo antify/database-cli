@@ -56,9 +56,9 @@ The repo's own `database.config.ts` is a playground config pointing at `mongodb:
 **`drop-database`, `truncate` and `load-fixtures` delete data without any confirmation prompt.**
 
 - `drop-database <db>` drops the database (for multi-tenant databases: all tenants).
-- `truncate <db>` empties all collections (or the ones in `--collections`).
+- `truncate <db>` empties all collections (or the ones in `--collections`). **On a multi-tenant database without `--tenant` it empties every tenant.**
 - `load-fixtures` truncates, runs migrations, then loads fixtures. **Without a database name it hits every configured database and tenant.**
-- The target is decided by `.env` (loaded from the working directory via dotenv) and `database.config.ts` in the working directory (or `--cwd`). Before every run, read the `databaseUrl` in that config and make sure it is a local or disposable database.
+- The target is decided by `.env` (loaded via `dotenv.config()` from the working directory of the process, NOT from `--cwd`) and `database.config.ts` in the working directory (or `--cwd`). Before every run, read the `databaseUrl` in that config and make sure it is a local or disposable database.
 - Never run these against a foreign or production database. `db status <db>` is read-only and a safe first look.
 - Exit code: a missing required argument (e.g. `db migrate` without a database name) prints an error but exits with code **0**. Do not rely on the exit code to detect that. Unknown commands and unknown database configs exit with 1.
 
@@ -100,7 +100,7 @@ Global option: `--cwd <dir>`.
 ## Commits and releases
 
 - Conventional Commits (`feat:`, `fix:`, `chore:`, `feat!:` for breaking), in English. `standard-version` derives version and CHANGELOG from them.
-- **Merging to `main` publishes a new npm release automatically** (`.github/workflows/release.yml`: version bump, tag, `npm publish`). This also applies to docs and chore merges. Only merge when a release is intended.
+- **Merging to `main` publishes a new npm release automatically** (`.github/workflows/release.yml`: version bump, tag, `pnpm publish` via `pnpm release`). This also applies to docs and chore merges. Only merge when a release is intended.
 - Never run `pnpm release` or `pnpm publish` locally.
 - Pull requests run `pr.yml` (install, build; lint is informational for now).
 

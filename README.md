@@ -59,7 +59,7 @@ Run `db <command> --help` for details. Global option: `--cwd <dir>` sets the pro
 | `db make-migration [databaseName] [migrationName]` | Generate a migration |
 | `db make-fixture [databaseName] [fixtureName]` | Generate a fixture |
 | `db load-fixtures [databaseName] [--tenant]` | **Destructive.** Truncate, run migrations, load fixtures. Without a database name: all databases and tenants |
-| `db truncate [databaseName] [--tenant] [--collections a,b]` | **Destructive.** Empty collections (comma separated, no spaces) |
+| `db truncate [databaseName] [--tenant] [--collections a,b]` | **Destructive.** Empty collections (comma separated, no spaces). On a multi-tenant database without `--tenant` it empties ALL tenants |
 | `db drop-database [databaseName] [--tenant]` | **Destructive.** Drop the database (multi-tenant: all tenants) |
 | `db help` | Show help |
 
@@ -96,4 +96,4 @@ export default defineMigration({
 - Run `pnpm lint` (or `pnpm lint:fix`) to lint.
 - Merging to `main` publishes a new npm release automatically; never run `pnpm release` locally.
 
-See [AGENTS.md](./AGENTS.md) for the full guide, including how the three repositories (`database`, `database-cli`, `database-module`) fit together.
+See [AGENTS.md](https://github.com/antify/database-cli/blob/main/AGENTS.md) for the full guide, including how the three repositories (`database`, `database-cli`, `database-module`) fit together.
